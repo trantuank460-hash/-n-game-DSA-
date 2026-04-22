@@ -92,3 +92,38 @@ def check_collisions():
     - Player vs Item (Tăng máu hoặc nâng cấp đạn)
     """
     pass # Code triển khai nằm trong vòng lặp chính
+
+
+# --- LỆNH IN DOCSTRINGS RA MÀN HÌNH ---
+if __name__ == "__main__":
+    print("--- THÔNG TIN CHI TIẾT CÁC LỚP TRONG GAME ---")
+    
+    # In docstring của lớp Player
+    print("\n[LỚP PLAYER]:")
+    print(Player.__doc__)
+    
+    # In docstring của lớp Enemy
+    print("-" * 30)
+    print("[LỚP ENEMY]:")
+    print(Enemy.__doc__)
+    
+    # In docstring của lớp Bullet
+    print("-" * 30)
+    print("[LỚP BULLET]:")
+    print(Bullet.__doc__)
+    
+    # In docstring của lớp Item
+    print("-" * 30)
+    print("[LỚP ITEM]:")
+    print(Item.__doc__)
+
+    # In docstring của các hàm
+    print("-" * 30)
+    print("[HÀM SPAWN ENEMY]:")
+    print(spawn_enemy.__doc__)
+
+    print("-" * 30)
+    print("[HÀM CHECK COLLISIONS]:")
+    print(check_collisions.__doc__)
+    
+    print("\n--- KẾT THÚC PHẦN GIỚI THIỆU ---\n")
