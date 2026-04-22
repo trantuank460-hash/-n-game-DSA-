@@ -1,6 +1,6 @@
 import pygame
 import random
-
+#Đây là doc giải thích các khối lệnh trong game
 class Player(pygame.sprite.Sprite):
     """
     Lớp đại diện cho phi thuyền của người chơi (player)
