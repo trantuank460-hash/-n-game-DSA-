@@ -3,7 +3,7 @@ import random
 import math
 import os
 
-# --- CẤU HÌNH ---
+#CẤU HÌNH
 WIDTH, HEIGHT = 800, 600
 FPS = 60
 WHITE, BLACK = (255, 255, 255), (0, 0, 0)
@@ -15,9 +15,15 @@ pygame.mixer.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Chiến Cơ Siêu Hạng - Kỷ Nguyên Boss")
 clock = pygame.time.Clock()
-font = pygame.font.SysFont("Arial", 24)
 
-# --- HÀM TẢI TÀI NGUYÊN (CÓ FALLBACK BẢO VỆ) ---
+#PHÔNG CHỮ TIẾNG VIỆT
+# Sử dụng tahoma hoặc segoe ui thay cho Arial để đảm bảo tương thích Unicode
+font_name = "tahoma"
+font = pygame.font.SysFont(font_name, 24)
+font_title = pygame.font.SysFont(font_name, 48, bold=True)
+font_large = pygame.font.SysFont(font_name, 36)
+
+#HÀM TẢI TÀI NGUYÊN
 def get_image(filename, size, fallback_color):
     try:
         img = pygame.image.load(filename).convert_alpha()
@@ -31,25 +37,35 @@ def get_sound(filename):
     try: return pygame.mixer.Sound(filename)
     except FileNotFoundError: return type('NoSound', (), {'play': lambda self: None})()
 
-# --- TẢI ẢNH & ÂM THANH (KÍCH THƯỚC ĐÃ ĐƯỢC PHÓNG TO) ---
+#TẢI ẢNH
 img_bg = get_image("background.png", (WIDTH, HEIGHT), BLACK)
-img_player = get_image("player.png", (75, 60), BLUE)        # To hơn
-img_enemy = get_image("enemy.png", (60, 60), RED)           # To hơn
-img_boss = get_image("boss.png", (180, 150), PURPLE)        # Boss to hoành tráng
-img_bullet = get_image("bullet.png", (15, 25), YELLOW)      # Kích thước cơ bản của đạn
-img_enemy_bullet = get_image("enemy_bullet.png", (15, 25), ORANGE) # Đạn địch to hơn
-img_hp = get_image("hp.png", (35, 35), GREEN)               # Icon to hơn
-img_power = get_image("powerup.png", (35, 35), BLUE)        # Icon to hơn
+img_player = get_image("player.png", (75, 60), BLUE)
+img_enemy = get_image("enemy.png", (60, 60), RED)
+img_boss = get_image("boss.png", (180, 150), PURPLE)
+img_bullet = get_image("bullet.png", (15, 25), YELLOW)
+img_enemy_bullet = get_image("enemy_bullet.png", (15, 25), ORANGE)
+img_hp = get_image("hp.png", (35, 35), GREEN)
+img_power = get_image("powerup.png", (35, 35), BLUE)
 
+#TẢI ÂM THANH
 snd_shoot = get_sound("shoot.wav")
-snd_explosion = get_sound("explosion.wav")
+snd_explosion_small = get_sound("explosion_small.wav") # Tiếng nổ quái nhỏ
+snd_explosion_boss = get_sound("explosion_boss.wav")   # Tiếng nổ khi giết boss
+snd_player_hit = get_sound("explosion.wav")            # Tiếng nổ khi người chơi bị trúng đòn
 
-# ================= CÁC LỚP ĐỐI TƯỢNG (CLASSES) =================
+def play_background_music():
+    try:
+        pygame.mixer.music.load("music_bg.mp3")
+        pygame.mixer.music.set_volume(0.5)
+        pygame.mixer.music.play(-1)
+    except Exception as e:
+        print(f"Không thể tải nhạc nền: {e}")
+
+#CÁC LỚP ĐỐI TƯỢNG (CLASSES)
 
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, x, y, power=1):
         super().__init__()
-        # Kích thước chiều ngang cơ bản to hơn (10) và tăng lên khi ăn powerup
         bullet_width = 10 + (power * 4) 
         bullet_height = 30 
         self.image = pygame.transform.scale(img_bullet, (bullet_width, bullet_height))
@@ -93,9 +109,11 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(midbottom=(WIDTH//2, HEIGHT-10))
         self.speed = 7
         self.hp = 5
+        self.max_hp = 8
         self.power_level = 1
+        self.max_power = 5
         self.last_shot = pygame.time.get_ticks()
-        self.shoot_delay = 200 # Khóa tốc độ bắn 
+        self.shoot_delay = 200
 
     def update(self):
         keys = pygame.key.get_pressed()
@@ -104,7 +122,6 @@ class Player(pygame.sprite.Sprite):
         if keys[pygame.K_UP] and self.rect.top > 0: self.rect.y -= self.speed
         if keys[pygame.K_DOWN] and self.rect.bottom < HEIGHT: self.rect.y += self.speed
 
-        # Bắn đạn tự động khi giữ phím Space
         if keys[pygame.K_SPACE]:
             now = pygame.time.get_ticks()
             if now - self.last_shot > self.shoot_delay:
@@ -121,31 +138,23 @@ class Enemy(pygame.sprite.Sprite):
     def __init__(self, level):
         super().__init__()
         self.image = img_enemy
-        # Sinh ngẫu nhiên trên cùng, tránh mép
         self.rect = self.image.get_rect(x=random.randrange(50, WIDTH-50), y=random.randrange(-100, -40))
-        
-        # Di chuyển ngang dọc
         self.speed_x = random.choice([-2, 2]) * (1 + level * 0.1)
         self.speed_y = random.uniform(0.5, 1.5) + (level * 0.1)
-        
-        # Biến để kiểm soát bắn
         self.last_shot = pygame.time.get_ticks()
-        self.shoot_delay = random.randint(1500, 3500) # 1.5s - 3.5s bắn 1 lần
+        self.shoot_delay = random.randint(1500, 3500)
 
     def update(self):
         self.rect.x += self.speed_x
         self.rect.y += self.speed_y
 
-        # Dội lại khi chạm tường hai bên
         if self.rect.left <= 0 or self.rect.right >= WIDTH:
             self.speed_x *= -1
-            self.rect.y += 20 # Tiến xuống một chút khi dội tường
+            self.rect.y += 20
 
-        # Xóa nếu bay quá màn hình
         if self.rect.top > HEIGHT:
             self.kill()
 
-        # Bắn đạn
         now = pygame.time.get_ticks()
         if now - self.last_shot > self.shoot_delay and self.rect.y > 0:
             self.shoot()
@@ -166,32 +175,79 @@ class Boss(pygame.sprite.Sprite):
         
         self.time_counter = 0
         self.last_shot = pygame.time.get_ticks()
-        self.shoot_delay = max(500, 1500 - (level * 100)) # Màn càng cao bắn càng lẹ
+        self.base_shoot_delay = max(500, 1500 - (level * 100))
+        
+        # Cấu trúc Máy trạng thái (State Machine) cho AI
+        self.state = "ENTER"
+        self.state_timer = pygame.time.get_ticks()
 
     def update(self):
-        # Xuất hiện từ từ vào màn hình
-        if self.rect.top < 50:
-            self.rect.y += 2
-        else:
-            # Di chuyển ngang hình sin mượt mà
+        now = pygame.time.get_ticks()
+
+        # Trạng thái 1: Boss tiến vào màn hình
+        if self.state == "ENTER":
+            if self.rect.top < 50:
+                self.rect.y += 2
+            else:
+                self.state = "HOVER"
+                self.state_timer = now
+
+        # Trạng thái 2: Di chuyển hình sin và bắn đạn tỏa
+        elif self.state == "HOVER":
             self.time_counter += 0.05
             self.rect.x = (WIDTH//2 - self.rect.width//2) + math.sin(self.time_counter) * (WIDTH//2 - 100)
 
-        # Boss Bắn đạn
-        now = pygame.time.get_ticks()
-        if now - self.last_shot > self.shoot_delay and self.rect.top >= 50:
-            self.shoot()
-            self.last_shot = now
+            if now - self.last_shot > self.base_shoot_delay:
+                self.shoot_spread()
+                self.last_shot = now
 
-    def shoot(self):
-        # Bắn đạn chùm 3 viên xòe ra
-        for speed_x in [-3, 0, 3]:
+            if now - self.state_timer > 5000:
+                self.state = random.choice(["SWOOP", "BURST"])
+                self.state_timer = now
+
+        # Trạng thái 3: Theo dõi tọa độ X của người chơi và bắn đạn thẳng liên tục
+        elif self.state == "SWOOP":
+            if self.rect.centerx < player.rect.centerx - 10:
+                self.rect.x += 4
+            elif self.rect.centerx > player.rect.centerx + 10:
+                self.rect.x -= 4
+
+            if now - self.last_shot > 300:
+                self.shoot_straight()
+                self.last_shot = now
+
+            if now - self.state_timer > 3000:
+                self.state = "HOVER"
+                self.state_timer = now
+
+        # Trạng thái 4: Xả đạn nhanh tại chỗ
+        elif self.state == "BURST":
+            if now - self.last_shot > 150:
+                self.shoot_burst()
+                self.last_shot = now
+
+            if now - self.state_timer > 2000:
+                self.state = "HOVER"
+                self.state_timer = now
+
+    def shoot_spread(self):
+        for speed_x in [-4, -2, 0, 2, 4]:
             eb = EnemyBullet(self.rect.centerx, self.rect.bottom, speed_y=6, speed_x=speed_x)
             all_sprites.add(eb)
             enemy_bullets.add(eb)
 
+    def shoot_straight(self):
+        eb = EnemyBullet(self.rect.centerx, self.rect.bottom, speed_y=8, speed_x=0)
+        all_sprites.add(eb)
+        enemy_bullets.add(eb)
+
+    def shoot_burst(self):
+        speed_x = random.choice([-3, -1.5, 0, 1.5, 3])
+        eb = EnemyBullet(self.rect.centerx, self.rect.bottom, speed_y=7, speed_x=speed_x)
+        all_sprites.add(eb)
+        enemy_bullets.add(eb)
+
     def draw_hp_bar(self, surface):
-        # Vẽ thanh máu Boss
         bar_width = 400
         bar_height = 15
         fill = (self.hp / self.max_hp) * bar_width
@@ -201,39 +257,68 @@ class Boss(pygame.sprite.Sprite):
         pygame.draw.rect(surface, WHITE, outline_rect, 2)
 
 
-# ================= KHỞI TẠO GAME =================
+#QUẢN LÝ TRẠNG THÁI TRÒ CHƠI 
+
 all_sprites = pygame.sprite.Group()
 enemies = pygame.sprite.Group()
 boss_group = pygame.sprite.Group() 
 bullets = pygame.sprite.Group()
 enemy_bullets = pygame.sprite.Group() 
 items = pygame.sprite.Group()
-
-player = Player()
-all_sprites.add(player)
+player = None
 
 score = 0
 level = 1
 enemies_to_spawn_boss = 15
 enemies_killed = 0
 boss_active = False
-running = True
+
+def reset_game():
+    global all_sprites, enemies, boss_group, bullets, enemy_bullets, items, player
+    global score, level, enemies_to_spawn_boss, enemies_killed, boss_active
+
+    all_sprites = pygame.sprite.Group()
+    enemies = pygame.sprite.Group()
+    boss_group = pygame.sprite.Group()
+    bullets = pygame.sprite.Group()
+    enemy_bullets = pygame.sprite.Group()
+    items = pygame.sprite.Group()
+
+    player = Player()
+    all_sprites.add(player)
+
+    score = 0
+    level = 1
+    enemies_to_spawn_boss = 15
+    enemies_killed = 0
+    boss_active = False
 
 def draw_ui():
     score_txt = font.render(f"Score: {score} | Level: {level}", True, WHITE)
-    hp_txt = font.render(f"HP: {'♥' * player.hp}", True, GREEN)
-    power_txt = font.render(f"Power: Lv.{player.power_level}", True, YELLOW)
+    hp_txt = font.render(f"HP: {player.hp}/{player.max_hp}", True, GREEN)
+    power_txt = font.render(f"Power: Lv.{player.power_level}/{player.max_power}", True, YELLOW)
     screen.blit(score_txt, (10, 10))
     screen.blit(hp_txt, (10, 40))
     screen.blit(power_txt, (10, 70))
 
     if boss_active:
         warning_txt = font.render("WARNING: BOSS INCOMING!", True, RED)
-        # Nhấp nháy text cảnh báo Boss
         if pygame.time.get_ticks() % 1000 < 500:
             screen.blit(warning_txt, (WIDTH//2 - 120, HEIGHT//2))
 
-# ================= VÒNG LẶP CHÍNH =================
+def draw_text_center(surface, text, font_type, color, y_offset):
+    text_surface = font_type.render(text, True, color)
+    text_rect = text_surface.get_rect(center=(WIDTH//2, y_offset))
+    surface.blit(text_surface, text_rect)
+
+# Khởi động nhạc nền
+play_background_music()
+
+# Trạng thái điều khiển tổng thể
+game_state = "MENU"
+running = True
+
+#VÒNG LẶP CHÍNH
 while running:
     clock.tick(FPS)
     
@@ -241,86 +326,102 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        if event.type == pygame.KEYDOWN:
+            if game_state == "MENU":
+                if event.key == pygame.K_RETURN:
+                    reset_game()
+                    game_state = "PLAYING"
+                if event.key == pygame.K_ESCAPE:
+                    running = False
+            elif game_state == "GAME_OVER":
+                if event.key == pygame.K_RETURN:
+                    reset_game()
+                    game_state = "PLAYING"
+                if event.key == pygame.K_ESCAPE:
+                    running = False
 
-    # 2. CẬP NHẬT TRẠNG THÁI
-    all_sprites.update()
+    # 2. XỬ LÝ LOGIC THEO TRẠNG THÁI
+    try: 
+        screen.blit(img_bg, (0, 0))
+    except TypeError: 
+        screen.fill(BLACK)
 
-    # --- QUẢN LÝ KẺ ĐỊCH VÀ BOSS ---
-    if not boss_active:
-        # Nếu chưa đủ kill thì sinh quái nhỏ
-        if enemies_killed < enemies_to_spawn_boss:
-            if len(enemies) < (5 + level):
-                e = Enemy(level)
-                all_sprites.add(e)
-                enemies.add(e)
-        # Đủ kill và dọn sạch quái nhỏ -> Gọi Boss
-        elif len(enemies) == 0:
-            boss_active = True
-            boss = Boss(level)
-            all_sprites.add(boss)
-            boss_group.add(boss)
-    else:
-        # Nếu Boss đã chết -> Chuyển màn
-        if len(boss_group) == 0:
-            boss_active = False
-            level += 1
-            enemies_killed = 0
-            enemies_to_spawn_boss += 5 # Tăng số quái yêu cầu cho màn sau
-            player.hp = min(player.hp + 2, 8) # Hồi máu qua màn
+    if game_state == "MENU":
+        draw_text_center(screen, "CHIẾN CƠ SIÊU HẠNG", font_title, WHITE, HEIGHT//3)
+        draw_text_center(screen, "Nhấn ENTER để Bắt Đầu", font_large, YELLOW, HEIGHT//2)
+        draw_text_center(screen, "Nhấn ESC để Thoát", font_large, RED, HEIGHT//2 + 50)
 
-    # --- XỬ LÝ VA CHẠM ---
-    # Đạn người chơi trúng Kẻ thù nhỏ
-    hits = pygame.sprite.groupcollide(enemies, bullets, True, True)
-    for hit in hits:
-        snd_explosion.play()
-        score += 10
-        enemies_killed += 1
-        if random.random() < 0.15: # 15% rơi đồ
-            it = Item(hit.rect.centerx, hit.rect.centery)
-            all_sprites.add(it)
-            items.add(it)
+    elif game_state == "GAME_OVER":
+        draw_text_center(screen, "TRÒ CHƠI KẾT THÚC", font_title, RED, HEIGHT//3)
+        draw_text_center(screen, f"Điểm của bạn: {score}", font_large, WHITE, HEIGHT//2 - 30)
+        draw_text_center(screen, f"Cấp độ đạt được: {level}", font_large, WHITE, HEIGHT//2 + 10)
+        draw_text_center(screen, "Nhấn ENTER để Chơi Lại", font_large, YELLOW, HEIGHT//2 + 80)
+        draw_text_center(screen, "Nhấn ESC để Thoát", font_large, RED, HEIGHT//2 + 130)
 
-    # Đạn người chơi trúng Boss
-    boss_hits = pygame.sprite.groupcollide(boss_group, bullets, False, True)
-    for boss_hit in boss_hits:
-        boss_hit.hp -= player.power_level # Đạn mạnh thì trừ máu Boss nhiều hơn
-        score += 5
-        if boss_hit.hp <= 0:
-            snd_explosion.play()
-            boss_hit.kill()
-            score += 1000 * level
+    elif game_state == "PLAYING":
+        all_sprites.update()
 
-    # Người chơi ăn Item
-    item_hits = pygame.sprite.spritecollide(player, items, True)
-    for item in item_hits:
-        if item.type == 'hp' and player.hp < 8: player.hp += 1
-        elif item.type == 'powerup' and player.power_level < 5: player.power_level += 1
+        if not boss_active:
+            if enemies_killed < enemies_to_spawn_boss:
+                if len(enemies) < (5 + level):
+                    e = Enemy(level)
+                    all_sprites.add(e)
+                    enemies.add(e)
+            elif len(enemies) == 0:
+                boss_active = True
+                boss = Boss(level)
+                all_sprites.add(boss)
+                boss_group.add(boss)
+        else:
+            if len(boss_group) == 0:
+                boss_active = False
+                level += 1
+                enemies_killed = 0
+                enemies_to_spawn_boss += 5
+                player.hp = min(player.hp + 2, player.max_hp)
 
-    # Người chơi trúng Đạn của kẻ thù
-    if pygame.sprite.spritecollide(player, enemy_bullets, True):
-        player.hp -= 1
-        snd_explosion.play()
-        if player.power_level > 1: player.power_level -= 1 # Trúng đạn bị tụt level súng
-        if player.hp <= 0: running = False
+        hits = pygame.sprite.groupcollide(enemies, bullets, True, True)
+        for hit in hits:
+            snd_explosion_small.play()
+            score += 10
+            enemies_killed += 1
+            if random.random() < 0.15:
+                it = Item(hit.rect.centerx, hit.rect.centery)
+                all_sprites.add(it)
+                items.add(it)
 
-    # Người chơi đâm trúng thân Kẻ thù hoặc Boss
-    if pygame.sprite.spritecollide(player, enemies, True) or pygame.sprite.spritecollide(player, boss_group, False):
-        player.hp -= 2
-        snd_explosion.play()
-        if player.hp <= 0: running = False
+        boss_hits = pygame.sprite.groupcollide(boss_group, bullets, False, True)
+        for boss_hit in boss_hits:
+            boss_hit.hp -= player.power_level
+            score += 5
+            if boss_hit.hp <= 0:
+                snd_explosion_boss.play()
+                boss_hit.kill()
+                score += 1000 * level
 
-    # 3. VẼ LÊN MÀN HÌNH
-    try: screen.blit(img_bg, (0, 0))
-    except TypeError: screen.fill(BLACK)
+        item_hits = pygame.sprite.spritecollide(player, items, True)
+        for item in item_hits:
+            if item.type == 'hp' and player.hp < player.max_hp: player.hp += 1
+            elif item.type == 'powerup' and player.power_level < player.max_power: player.power_level += 1
+
+        if pygame.sprite.spritecollide(player, enemy_bullets, True):
+            player.hp -= 1
+            snd_player_hit.play()
+            if player.power_level > 1: player.power_level -= 1
+            if player.hp <= 0: game_state = "GAME_OVER"
+
+        if pygame.sprite.spritecollide(player, enemies, True) or pygame.sprite.spritecollide(player, boss_group, False):
+            player.hp -= 2
+            snd_player_hit.play()
+            if player.hp <= 0: game_state = "GAME_OVER"
+
+        all_sprites.draw(screen)
+        draw_ui()
         
-    all_sprites.draw(screen)
-    draw_ui()
-    
-    # Vẽ thanh máu Boss nếu Boss đang xuất hiện
-    if boss_active and len(boss_group) > 0:
-        boss.draw_hp_bar(screen)
+        if boss_active and len(boss_group) > 0:
+            boss.draw_hp_bar(screen)
 
+    # 3. CẬP NHẬT MÀN HÌNH
     pygame.display.flip()
 
-print(f"GAME OVER - Score: {score} - Level: {level}")
 pygame.quit()

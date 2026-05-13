@@ -1,129 +1,155 @@
 import pygame
 import random
-#Đây là doc giải thích các khối lệnh trong game
-class Player(pygame.sprite.Sprite):
-    """
-    Lớp đại diện cho phi thuyền của người chơi (player)
-    
-    Attributes:
-        speed (int): Tốc độ di chuyển của phi thuyền ( thay đổi tùy theo màn hoặc nâng cấp khi ăn được viên năng lượng )
-        hp (int): Số lượng máu (sinh mạng) còn lại
-        power_level (int): Cấp độ sức mạnh của đạn
-        
-    Methods:
-        update(): Xử lý logic di chuyển 4 hướng từ bàn phím và giới hạn biên
-        shoot(): Khởi tạo đối tượng Bullet tại vị trí hiện tại của phi thuyền
-    """
-    def __init__(self):
-        super().__init__()
-        self.image = pygame.Surface((50, 40))
-        self.image.fill((0, 0, 255))
-        self.rect = self.image.get_rect(midbottom=(400, 590))
-        self.speed = 7
-        self.hp = 4
-        self.power_level = 1
+import math
 
-class Enemy(pygame.sprite.Sprite):
+def get_image(filename, size, fallback_color):
     """
-    Lớp quản lý các máy bay kẻ thù sinh ra ngẫu nhiên
+    Hàm tải và thay đổi kích thước tài nguyên hình ảnh.
     
     Args:
-        speed_mult (float): Hệ số nhân tốc độ, dùng để tăng độ khó theo level
+        filename (str): Đường dẫn tệp hình ảnh.
+        size (tuple): Kích thước đích dạng (chiều_rộng, chiều_cao).
+        fallback_color (tuple): Cấu trúc màu RGB dự phòng.
         
     Logic:
-        Kẻ thù tự động di chuyển từ trên xuống dưới và tự hủy (kill) khi
-        vượt quá giới hạn màn hình để giải phóng bộ nhớ
+        Sử dụng cơ chế ngoại lệ (try-except) để bắt lỗi FileNotFoundError. 
+        Nếu thiếu tệp, tự động cấp phát một bề mặt (Surface) có màu đồng nhất để ngăn chặn lỗi dừng chương trình đột ngột.
     """
-    def __init__(self, speed_mult):
-        super().__init__()
-        self.image = pygame.Surface((30, 30))
-        self.image.fill((255, 0, 0))
-        self.rect = self.image.get_rect(x=random.randrange(770), y=random.randrange(-100, -40))
-        self.speed_y = random.randrange(2, 5) * speed_mult
+    pass
+
+def get_sound(filename):
+    """
+    Hàm tải tài nguyên âm thanh vào hệ thống.
+    
+    Args:
+        filename (str): Đường dẫn tệp âm thanh.
+        
+    Logic:
+        Xử lý ngoại lệ tập tin. Trả về một đối tượng giả (dummy object) với phương thức play() rỗng nếu không tìm thấy tệp.
+    """
+    pass
 
 class Bullet(pygame.sprite.Sprite):
     """
-    Lớp quản lý đạn bắn ra từ người chơi.
+    Lớp cấu trúc cho đối tượng đạn của người chơi.
     
     Args:
-        x (int): Tọa độ X khởi tạo
-        y (int): Tọa độ Y khởi tạo
-        power (int): Cấp độ sức mạnh ảnh hưởng đến kích thước viên đạn
+        x (int): Tọa độ khởi tạo X.
+        y (int): Tọa độ khởi tạo Y.
+        power (int): Cấp độ vũ khí, dùng để tính toán hệ số chiều rộng của viên đạn.
         
-    Optimization:
-        Sử dụng cơ chế tự hủy khi rect.bottom < 0 để tránh tràn bộ nhớ
+    Logic:
+        Tịnh tiến tọa độ Y theo hướng âm (di chuyển lên trên).
+        Áp dụng tự hủy (kill) khi giá trị tọa độ vượt ngoài biên trên của màn hình.
     """
-    def __init__(self, x, y, power=1):
-        super().__init__()
-        self.image = pygame.Surface((5 * power, 15))
-        self.image.fill((255, 255, 0))
-        self.rect = self.image.get_rect(midbottom=(x, y))
-        self.speed_y = -10
+    pass
+
+class EnemyBullet(pygame.sprite.Sprite):
+    """
+    Lớp cấu trúc cho đạn của các đối tượng địch (Enemy và Boss).
+    
+    Args:
+        x (int), y (int): Tọa độ khởi tạo.
+        speed_y (int), speed_x (int): Vận tốc tịnh tiến trên hai trục tọa độ.
+        
+    Logic:
+        Di chuyển theo vector (speed_x, speed_y). Xóa khỏi bộ nhớ khi tọa độ giao cắt với bất kỳ ranh giới biên nào của cửa sổ trò chơi.
+    """
+    pass
 
 class Item(pygame.sprite.Sprite):
     """
-    Lớp đại diện cho các vật phẩm hỗ trợ rơi ra từ kẻ thù
+    Lớp đại diện cho vật phẩm rơi ra sau khi thực thể bị tiêu diệt.
     
-    Types:
-        'hp': Hồi máu cho người chơi
-        'powerup': Nâng cấp kích thước/sức mạnh đạn
+    Args:
+        x (int), y (int): Tọa độ xuất phát.
+        
+    Logic:
+        Thuật toán phân bổ ngẫu nhiên (random.choice) gán định danh loại vật phẩm ('hp' hoặc 'powerup').
     """
-    def __init__(self, x, y):
-        super().__init__()
-        self.type = random.choice(['hp', 'powerup'])
-        self.image = pygame.Surface((20, 20))
-        self.image.fill((0, 255, 0) if self.type == 'hp' else (128, 0, 128))
-        self.rect = self.image.get_rect(center=(x, y))
-        self.speed_y = 3
+    pass
 
-def spawn_enemy():
+class Player(pygame.sprite.Sprite):
     """
-    Hàm bổ trợ để khởi tạo một đối tượng Enemy mới
-    Thêm đối tượng vào các nhóm quản lý tương ứng (Sprite Groups)
+    Lớp xử lý thực thể người chơi.
+    
+    Attributes:
+        hp (int): Chỉ số sinh tồn.
+        power_level (int): Biến định lượng cấp độ sát thương.
+        
+    Logic:
+        - Xử lý đầu vào (Input): Kiểm tra trạng thái phím bấm liên tục để dịch chuyển tọa độ 4 hướng, có đối chiếu giới hạn biên màn hình.
+        - Xử lý sự kiện bắn: Áp dụng cơ chế giới hạn tần suất (cooldown) bằng cách so sánh hiệu số thời gian hệ thống.
     """
-    pass # Code triển khai nằm trong vòng lặp chính
+    pass
 
-def check_collisions():
+class Enemy(pygame.sprite.Sprite):
     """
-    Giải thuật xử lý va chạm chính của game
-    Sử dụng AABB Collision để xác định tương tác giữa
-    - Bullet vs Enemy (Tiêu diệt địch, rơi vật phẩm)
-    - Player vs Enemy (Giảm máu người chơi)
-    - Player vs Item (Tăng máu hoặc nâng cấp đạn)
+    Lớp khởi tạo thực thể đối phương thông thường.
+    
+    Args:
+        level (int): Biến số cấp độ toàn cục, dùng làm hệ số nhân cho vận tốc tịnh tiến.
+        
+    Logic:
+        - Dịch chuyển theo góc nghiêng cố định. Đảo ngược dấu của vận tốc trục X khi tọa độ đối tượng va chạm mép trái/phải màn hình.
+        - Khởi tạo đối tượng đạn ngẫu nhiên dựa trên bộ đếm thời gian.
     """
-    pass # Code triển khai nằm trong vòng lặp chính
+    pass
 
+class Boss(pygame.sprite.Sprite):
+    """
+    Lớp khởi tạo thực thể trùm cuối, vận hành theo mô hình Máy trạng thái hữu hạn.
+    
+    Args:
+        level (int): Quyết định tổng lượng máu và tần suất xả đạn.
+        
+    Logic:
+        - Quản lý vòng đời qua biến trạng thái: 'ENTER', 'HOVER', 'SWOOP', 'BURST'.
+        - 'HOVER': Tịnh tiến theo hàm lượng giác (Sine wave).
+        - 'SWOOP': Nội suy tọa độ X của người chơi để bám sát mục tiêu.
+        - Phương thức tấn công được chia thành nhiều hàm chuyên biệt: bắn tỏa (shoot_spread), bắn thẳng (shoot_straight) và xả đạn (shoot_burst).
+    """
+    pass
 
-# --- LỆNH IN DOCSTRINGS RA MÀN HÌNH ---
+def reset_game():
+    """
+    Hàm thiết lập lại dữ liệu toàn cục.
+    
+    Logic:
+        Khởi tạo lại các đối tượng danh sách (Sprite Groups) thành tập hợp rỗng. 
+        Đưa các biến đếm (score, level, enemies_killed) và tham chiếu người chơi (Player) về trạng thái mặc định ban đầu.
+    """
+    pass
+
+def draw_ui():
+    """
+    Hàm kết xuất (Render) các tham số hệ thống lên màn hình hiển thị.
+    
+    Logic:
+        Truy xuất dữ liệu của thực thể Player (hp, power_level) và biến toàn cục (score, level) để ép kiểu sang văn bản tĩnh.
+        Xử lý hiển thị chớp tắt đối với cảnh báo Boss bằng cách sử dụng toán tử modulo trên thời gian hệ thống.
+    """
+    pass
+
+#Lệnh in Docstring kiểm tra nội dung 
 if __name__ == "__main__":
-    print("--- THÔNG TIN CHI TIẾT CÁC LỚP TRONG GAME ---")
+    print("[HÀM HỆ THỐNG]")
+    print(get_image.__doc__)
+    print(get_sound.__doc__)
+    print("-" * 40)
     
-    # In docstring của lớp Player
-    print("\n[LỚP PLAYER]:")
-    print(Player.__doc__)
-    
-    # In docstring của lớp Enemy
-    print("-" * 30)
-    print("[LỚP ENEMY]:")
-    print(Enemy.__doc__)
-    
-    # In docstring của lớp Bullet
-    print("-" * 30)
-    print("[LỚP BULLET]:")
+    print("[LỚP ĐỐI TƯỢNG ĐẠN & VẬT PHẨM]")
     print(Bullet.__doc__)
-    
-    # In docstring của lớp Item
-    print("-" * 30)
-    print("[LỚP ITEM]:")
+    print(EnemyBullet.__doc__)
     print(Item.__doc__)
-
-    # In docstring của các hàm
-    print("-" * 30)
-    print("[HÀM SPAWN ENEMY]:")
-    print(spawn_enemy.__doc__)
-
-    print("-" * 30)
-    print("[HÀM CHECK COLLISIONS]:")
-    print(check_collisions.__doc__)
+    print("-" * 40)
     
-    print("\n--- KẾT THÚC PHẦN GIỚI THIỆU ---\n")
+    print("[LỚP THỰC THỂ SỐNG]")
+    print(Player.__doc__)
+    print(Enemy.__doc__)
+    print(Boss.__doc__)
+    print("-" * 40)
+    
+    print("[HÀM QUẢN LÝ TRẠNG THÁI & GIAO DIỆN]")
+    print(reset_game.__doc__)
+    print(draw_ui.__doc__)
