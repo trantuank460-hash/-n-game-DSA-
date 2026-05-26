@@ -4,50 +4,46 @@ import math
 
 def get_image(filename, size, fallback_color):
     """
-    Hàm tải và thay đổi kích thước tài nguyên hình ảnh.
+    Hàm tải và thay đổi kích thước tài nguyên hình ảnh
     
     Args:
-        filename (str): Đường dẫn tệp hình ảnh.
-        size (tuple): Kích thước đích dạng (chiều_rộng, chiều_cao).
-        fallback_color (tuple): Cấu trúc màu RGB dự phòng.
+        filename (str): Đường dẫn tệp hình ảnh
+        size (tuple): Kích thước đích dạng (chiều_rộng, chiều_cao)
+        fallback_color (tuple): Cấu trúc màu RGB dự phòng
         
     Logic:
-        Sử dụng cơ chế ngoại lệ (try-except) để bắt lỗi FileNotFoundError. 
-        Nếu thiếu tệp, tự động cấp phát một bề mặt (Surface) có màu đồng nhất để ngăn chặn lỗi dừng chương trình đột ngột.
+        Sử dụng cơ chế ngoại lệ (try-except) để bắt lỗi FileNotFoundError
+        Nếu thiếu tệp, tự động cấp phát một bề mặt (Surface) có màu đồng nhất để ngăn chặn lỗi dừng chương trình đột ngột
     """
     pass
 
 def get_sound(filename):
     """
-    Hàm tải tài nguyên âm thanh vào hệ thống.
+    Hàm tải tài nguyên âm thanh vào hệ thốn
     
     Args:
-        filename (str): Đường dẫn tệp âm thanh.
+        filename (str): Đường dẫn tệp âm thanh
         
     Logic:
-        Xử lý ngoại lệ tập tin. Trả về một đối tượng giả (dummy object) với phương thức play() rỗng nếu không tìm thấy tệp.
+        Xử lý ngoại lệ tập tin. Trả về một đối tượng giả (dummy object) với phương thức play() rỗng nếu không tìm thấy tệp
     """
     pass
-
-# ==========================================
-# CÁC LỚP GIẢI THUẬT VÀ CẤU TRÚC DỮ LIỆU
-# ==========================================
-
+# Các lớp gt và ctdl 
 class BSTNode:
     """
-    Cấu trúc Nút (Node) cơ sở cho Cây nhị phân tìm kiếm (BST).
+    Cấu trúc Nút (Node) cơ sở cho Cây nhị phân tìm kiếm (BST)
 
     Args:
-        score (int): Giá trị điểm số lưu trữ tại nút.
+        score (int): Giá trị điểm số lưu trữ tại nút
 
     Logic:
-        Mỗi nút lưu trữ một điểm số nguyên (score) và chứa con trỏ liên kết đến hai nhánh con (left, right), mặc định khởi tạo là None.
+        Mỗi nút lưu trữ một điểm số nguyên (score) và chứa con trỏ liên kết đến hai nhánh con (left, right), mặc định khởi tạo là None 
     """
     pass
 
 class ScoreBST:
     """
-    Cấu trúc dữ liệu Cây nhị phân tìm kiếm (Binary Search Tree) dùng để quản lý Bảng xếp hạng điểm cao.
+    Cấu trúc dữ liệu Cây nhị phân tìm kiếm (Binary Search Tree) ---> quản lý Bảng xếp hạng điểm cao
 
     Logic:
         - Phương thức insert: Chèn dữ liệu điểm số mới vào cây đệ quy theo quy tắc tiêu chuẩn (nhỏ hơn gốc xếp sang nhánh trái, lớn hơn hoặc bằng xếp sang nhánh phải).
@@ -85,11 +81,7 @@ def binary_search_closest_enemy(sorted_enemies, target_x):
         Độ phức tạp thời gian đạt O(log N).
     """
     pass
-
-# ==========================================
-# CÁC LỚP THỰC THỂ TRÒ CHƠI
-# ==========================================
-
+# Lớp thực thể của game 
 class Bullet(pygame.sprite.Sprite):
     """
     Lớp cấu trúc cho đối tượng đạn cơ bản của người chơi.
